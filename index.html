@@ -555,6 +555,31 @@ function renderPartidos(){
   const byDate={}; const fechasSet = new Set();
   DATA.matches.forEach(m=>{ (byDate[m.date]=byDate[m.date]||[]).push(m); fechasSet.add(m.date); });
   const fechas = Array.from(fechasSet).sort();
+  
+  // Auto-detectar la fecha actual y establecerla como filtro por defecto (solo la primera vez)
+  if(gruposFilterDate === null && fechas.length > 0){
+    const hoy = new Date();
+    const diaHoy = String(hoy.getDate()).padStart(2,'0');
+    const mesHoy = String(hoy.getMonth() + 1).padStart(2,'0');
+    const fechaHoyStr = `${diaHoy}/${mesHoy}`;
+    
+    // Buscar si hoy coincide con alguna fecha del mundial
+    const fechaCoincide = fechas.find(f => f === fechaHoyStr);
+    if(fechaCoincide){
+      gruposFilterDate = fechaCoincide;
+    } else {
+      // Si hoy no hay partidos, encontrar la próxima fecha futura
+      const fechaProxima = fechas.find(f => {
+        const [dia, mes] = f.split('/').map(Number);
+        const fechaPartido = new Date(2026, mes - 1, dia);
+        return fechaPartido > hoy;
+      });
+      if(fechaProxima){
+        gruposFilterDate = fechaProxima;
+      }
+    }
+  }
+  
   let h=`<div style="padding:0 4px"><div style="margin-bottom:12px"><div style="font-size:11px;color:rgba(239,245,240,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Filtrar por fecha</div><div style="display:flex;flex-wrap:wrap;gap:6px">`;
   h+=`<button onclick="gruposFilterDate=null;renderPartidos()" style="background:${gruposFilterDate?'rgba(239,245,240,.1)':'var(--ok)'};color:#15321F;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer;text-transform:uppercase;letter-spacing:.06em">Todas</button>`;
   fechas.forEach(f=>{ const isActive = gruposFilterDate===f; h+=`<button onclick="gruposFilterDate='${f}';renderPartidos()" style="background:${isActive?'var(--ok)':'rgba(239,245,240,.1)'};color:${isActive?'#15321F':'#FFFFFF'};border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">${f}</button>`; });
