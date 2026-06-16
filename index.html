@@ -203,6 +203,15 @@ input[type="number"] {
 .userbar{display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;color:rgba(239,245,240,.6);margin-top:8px}
 .userbar b{color:var(--gold)}
 .userbar a{color:rgba(239,245,240,.5);cursor:pointer;text-decoration:underline}
+.authcardwrapper{display:flex;flex-direction:column}
+#authForm{display:flex;flex-direction:column}
+#authForm.hidden{display:none}
+#completedSignup{display:none;text-align:center}
+#completedSignup.show{display:block}
+#completedSignup .successicon{font-size:48px;margin-bottom:14px}
+#completedSignup h3{margin:0 0 10px;font-family:'Saira Condensed',sans-serif;font-size:22px;color:#fff}
+#completedSignup .successtext{color:rgba(239,245,240,.7);font-size:13px;line-height:1.6;margin-bottom:20px}
+#completedSignup .successemail{background:rgba(99,190,123,.1);border:1px solid rgba(99,190,123,.3);border-radius:8px;padding:12px;margin-bottom:20px;color:rgba(239,245,240,.8);font-size:12px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -213,27 +222,45 @@ input[type="number"] {
   <div class="authcard">
     <div class="authlogo">Canadá · México · USA</div>
     <h2>Quiniela Mundial 2026</h2>
-    <div class="authsub" id="authModeSub">Inicia sesión para participar</div>
+    
+    <!-- Formulario de Login/Signup -->
+    <div id="authForm">
+      <div class="authsub" id="authModeSub">Inicia sesión para participar</div>
 
-    <div class="authfield" id="nameField" style="display:none">
-      <label>Tu nombre completo</label>
-      <input type="text" id="authName" placeholder="Ej: PEREZ, JUAN" autocomplete="name">
+      <div class="authfield" id="nameField" style="display:none">
+        <label>Tu nombre completo</label>
+        <input type="text" id="authName" placeholder="Ej: PEREZ, JUAN" autocomplete="name">
+      </div>
+      <div class="authfield">
+        <label>Email</label>
+        <input type="email" id="authEmail" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="authfield">
+        <label>Contraseña</label>
+        <input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="authbtn" id="authSubmit">Entrar</button>
+
+      <div class="authmsg" id="authMsg"></div>
+
+      <div class="authtoggle" id="authToggle">
+        ¿No tienes cuenta? <a id="authToggleLink">Regístrate</a>
+      </div>
     </div>
-    <div class="authfield">
-      <label>Email</label>
-      <input type="email" id="authEmail" placeholder="tu@email.com" autocomplete="email">
-    </div>
-    <div class="authfield">
-      <label>Contraseña</label>
-      <input type="password" id="authPass" placeholder="••••••••" autocomplete="current-password">
-    </div>
 
-    <button class="authbtn" id="authSubmit">Entrar</button>
-
-    <div class="authmsg" id="authMsg"></div>
-
-    <div class="authtoggle" id="authToggle">
-      ¿No tienes cuenta? <a id="authToggleLink">Regístrate</a>
+    <!-- Pantalla de Registro Completado -->
+    <div id="completedSignup">
+      <div class="successicon">✓</div>
+      <h3>¡Registro Completado!</h3>
+      <div class="successtext">
+        Te enviamos un correo de confirmación. Por favor revísalo (incluyendo tu carpeta de spam) y haz clic en el enlace para activar tu cuenta.
+      </div>
+      <div class="successemail" id="completedEmail"></div>
+      <div class="successtext" style="font-size:12px;color:rgba(239,245,240,.5);margin-bottom:20px">
+        Una vez confirmes tu email, podrás iniciar sesión y comenzar a jugar.
+      </div>
+      <button class="authbtn" id="backToLoginBtn">Volver al Login</button>
     </div>
   </div>
 </div>
@@ -284,7 +311,7 @@ function authClearMsg(){ const m=$('authMsg'); m.textContent=''; m.className='au
 function setAuthMode(mode){
   authMode = mode;
   if(mode==='signup'){
-    $('authModeSub').textContent = 'Crea tu cuenta para participar';
+    $('authModeSub').textContent = 'Crea tu cuenta (recibirás un email de confirmación)';
     $('nameField').style.display = 'block';
     $('authSubmit').textContent = 'Registrarme';
     $('authPass').setAttribute('autocomplete','new-password');
@@ -317,7 +344,18 @@ async function handleAuthSubmit(){
         options: { data: { full_name: name } }
       });
       if(error) throw error;
-      authShowMsg('¡Listo! Te enviamos un correo de confirmación. Revísalo (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.','ok');
+      // Mostrar pantalla de registro completado
+      $('authForm').classList.add('hidden');
+      $('completedEmail').textContent = `Correo enviado a: ${email}`;
+      $('completedSignup').classList.add('show');
+      $('backToLoginBtn').addEventListener('click', ()=>{
+        $('authForm').classList.remove('hidden');
+        $('completedSignup').classList.remove('show');
+        setAuthMode('login');
+        $('authEmail').value = '';
+        $('authPass').value = '';
+        $('authName').value = '';
+      });
     } else {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
       if(error) throw error;
