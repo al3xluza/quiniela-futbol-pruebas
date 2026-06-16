@@ -411,6 +411,7 @@ let MINUTOS = {}; // {matchId: "45"} minutos del partido EN VIVO
 let GOLEADORES = []; // [{jugador, sel, goles}] desde la pestaña GOLEADORES
 let TARJETAS = [];   // [{jugador, sel, amarillas, rojas}] desde la pestaña TARJETAS
 let gruposFilterDate = null; // null = mostrar todos, sino es la fecha seleccionada (ej. "11/06")
+let _autoFechaYaHecha = false; // rastrear si la auto-detección ya ocurrió
 let lastUpdate = null;
 
 function points(p1,p2,r1,r2){
@@ -556,8 +557,8 @@ function renderPartidos(){
   DATA.matches.forEach(m=>{ (byDate[m.date]=byDate[m.date]||[]).push(m); fechasSet.add(m.date); });
   const fechas = Array.from(fechasSet).sort();
   
-  // Auto-detectar la fecha actual y establecerla como filtro por defecto (solo la primera vez)
-  if(gruposFilterDate === null && fechas.length > 0){
+  // Auto-detectar la fecha actual y establecerla como filtro por defecto (solo la PRIMERA VEZ)
+  if(!_autoFechaYaHecha && gruposFilterDate === null && fechas.length > 0){
     const hoy = new Date();
     const diaHoy = String(hoy.getDate()).padStart(2,'0');
     const mesHoy = String(hoy.getMonth() + 1).padStart(2,'0');
@@ -567,6 +568,7 @@ function renderPartidos(){
     const fechaCoincide = fechas.find(f => f === fechaHoyStr);
     if(fechaCoincide){
       gruposFilterDate = fechaCoincide;
+      _autoFechaYaHecha = true;
     } else {
       // Si hoy no hay partidos, encontrar la próxima fecha futura
       const fechaProxima = fechas.find(f => {
@@ -576,6 +578,7 @@ function renderPartidos(){
       });
       if(fechaProxima){
         gruposFilterDate = fechaProxima;
+        _autoFechaYaHecha = true;
       }
     }
   }
